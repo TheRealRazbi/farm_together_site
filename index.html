@@ -31,25 +31,56 @@
   }
   main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 48px; }
   h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
-  .lede { color: var(--text-2); margin: 0 0 24px; max-width: 70ch; }
+  .lede { color: var(--text-2); margin: 0 0 20px; max-width: 70ch; }
 
+  input[type="search"], input[type="number"], input[type="text"] {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+  }
+  input[type="search"] { width: 240px; }
+  input[type="number"] { width: 72px; padding: 3px 8px; }
+  input:focus-visible, button:focus-visible, th:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  input[type="checkbox"] { accent-color: var(--chip-on); width: 15px; height: 15px; margin: 0; }
+
+  /* toolbar + dropdown menus */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .count { color: var(--text-3); margin-left: auto; font-size: 13px; }
+  .menu { position: relative; }
+  .menu summary {
+    list-style: none; cursor: pointer; user-select: none;
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-2); font-size: 13px;
+  }
+  .menu summary::-webkit-details-marker { display: none; }
+  .menu summary::after { content: " ▾"; color: var(--text-3); }
+  .menu[open] summary { color: var(--text); border-color: var(--accent); }
+  .menu .badge { color: var(--text-3); margin-left: 4px; }
+  .menu-panel {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 10; min-width: 230px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 6px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+  .menu-panel h3 {
+    margin: 6px 8px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .menu-panel .opt {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; color: var(--text);
+  }
+  .menu-panel .opt:hover { background: var(--surface); }
+  .menu-panel .opt label { display: flex; align-items: center; gap: 10px; cursor: pointer; white-space: nowrap; flex: 1; }
+  .menu-panel .swatch { width: 10px; height: 10px; border-radius: 3px; margin-left: auto; flex: none; }
+  .menu-panel .sub { color: var(--text-3); font-size: 12px; }
+
+  /* filter panel */
   .controls {
-    display: grid; gap: 10px; margin-bottom: 14px;
+    display: grid; gap: 12px; margin-bottom: 14px;
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
   }
   .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
   .label { color: var(--text-2); min-width: 128px; }
-  .control { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
-  .control .label { min-width: 120px; }
-  input[type="search"], input[type="number"] {
-    font: inherit; color: var(--text); background: var(--surface);
-    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
-  }
-  input[type="search"] { width: 200px; }
-  input[type="number"] { width: 76px; }
-  input:focus-visible, button:focus-visible, th:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 1px;
-  }
   .chips { display: flex; flex-wrap: wrap; gap: 4px; }
   .chips.seg { margin-left: 8px; }
   .chips.seg .chip { padding: 3px 9px; font-size: 12px; }
@@ -59,8 +90,21 @@
     border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
   }
   .chip[aria-pressed="true"] { background: var(--chip-on); border-color: var(--chip-on); color: var(--chip-on-text); }
-  .count { color: var(--text-3); margin-left: auto; font-size: 13px; }
 
+  /* segmented slider */
+  .slider { flex: 1 1 360px; max-width: 560px; }
+  .slider input[type="range"] { width: 100%; margin: 0; accent-color: var(--chip-on); }
+  .ticks { position: relative; height: 16px; margin: 0 8px; }
+  .ticks span {
+    position: absolute; transform: translateX(-50%); font-size: 11px; color: var(--text-3);
+  }
+  .ticks span::before {
+    content: ""; position: absolute; left: 50%; top: -3px; width: 1px; height: 4px; background: var(--border);
+  }
+  #timeInput { width: 92px; padding: 4px 8px; text-align: center; }
+  #timeInput.bad { border-color: #e66767; }
+
+  /* table */
   .table-wrap {
     overflow: auto; max-height: calc(100vh - 120px);
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
@@ -87,6 +131,7 @@
   tbody tr:hover td { background: var(--surface-2); }
   tbody tr:last-child td { border-bottom: 0; }
   td.sep, th.sep { border-left: 1px solid var(--border); }
+  .empty { text-align: center; color: var(--text-3); padding: 28px; }
 
   .seasons { display: inline-flex; gap: 3px; }
   .s {
@@ -101,7 +146,6 @@
   thead th.tinted { box-shadow: inset 0 -3px 0 var(--tint); }
   td.bar span { min-width: 40px; }
   td.best span { font-weight: 700; }
-  .muted { color: var(--text-3); }
 
   .notes { margin-top: 28px; color: var(--text-2); max-width: 80ch; }
   .notes h2 { font-size: 16px; color: var(--text); margin: 0 0 8px; }
@@ -114,8 +158,9 @@
     main { padding-top: 20px; }
     h1 { font-size: 22px; }
     input[type="search"] { width: 100%; }
-    .control.search { flex: 1 1 100%; }
-    .label, .control .label { min-width: 0; flex: 1 1 100%; }
+    .label { min-width: 0; flex: 1 1 100%; }
+    .count { flex: 1 1 100%; margin-left: 0; }
+    .menu-panel { position: fixed; left: 16px; right: 16px; top: auto; }
   }
 </style>
 </head>
@@ -125,27 +170,34 @@
   <p class="lede">Which crops are worth planting, and how much they really earn depending on how often you check your farm.
     Click a column header to sort.</p>
 
-  <div class="controls">
-    <div class="row">
-      <label class="control search">
-        <input type="search" id="search" placeholder="Search crops…" aria-label="Search crops">
-      </label>
-      <span class="count" id="count"></span>
+  <div class="toolbar">
+    <details class="menu" id="filterMenu">
+      <summary>Filters<span class="badge" id="filterBadge"></span></summary>
+      <div class="menu-panel" id="filterPanel"><h3>Show filters</h3></div>
+    </details>
+    <details class="menu" id="columnMenu">
+      <summary>Columns<span class="badge" id="columnBadge"></span></summary>
+      <div class="menu-panel" id="columnPanel"></div>
+    </details>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="row" data-filter="search">
+      <input type="search" id="search" placeholder="Search crops…" aria-label="Search crops">
     </div>
-    <div class="row">
+    <div class="row" data-filter="seasons">
       <span class="label">Seasons</span>
       <div class="chips" id="seasonChips" role="group" aria-label="Filter by season"></div>
       <div class="chips seg" id="matchChips" role="group" aria-label="Season match mode"></div>
     </div>
-    <div class="row">
+    <div class="row" data-filter="time">
       <span class="label">Grows in at most</span>
-      <div class="chips" id="timeChips" role="group" aria-label="Maximum growth time"></div>
-    </div>
-    <div class="row">
-      <label class="control">
-        <span class="label">Your check interval</span>
-        <input type="number" id="custom" min="1" step="1" value="120"> <span>min</span>
-      </label>
+      <div class="slider">
+        <input type="range" id="timeSlider" min="0" step="1" aria-label="Maximum growth time">
+        <div class="ticks" id="timeTicks"></div>
+      </div>
+      <input type="text" id="timeInput" aria-label="Maximum growth time, e.g. 90, 1h30m, 2d" title="Type minutes or e.g. 1h30m, 1.5h, 2d">
     </div>
   </div>
 
@@ -171,12 +223,14 @@
         It shows how much gold each click gets you, whatever the growth time.</dd>
       <dt>Gold/h per tile</dt>
       <dd>"Nonstop" assumes you replant the moment a crop is ready. The other columns assume you only check in every
-        10 min, 30 min, 1 h, 8 h, or your own interval, so a crop waits until your next visit.
+        10 min, 30 min, 1 h, 8 h, or your own interval (set it under Columns), so a crop waits until your next visit.
         For example, a 45 min crop checked every 30 min is harvested after 60 min.
         This is where fast crops fall behind: they're only great if you're actively playing.</dd>
       <dt>Bars</dt>
       <dd>Bar length is on a log scale within each column, so small values stay visible. The best crop in each column is in bold.
         Numbers of 1,000 or more are written as k (2.35k = 2,350).</dd>
+      <dt>Your settings</dt>
+      <dd>Which filters and columns you show, and your check interval, are remembered in this browser.</dd>
     </dl>
   </section>
   <footer>Data collected by hand in-game. Updated 2026-09-19.</footer>
@@ -187,19 +241,32 @@ const CROPS = [{"name":"graffiti cauliflower","cost":4500,"harvest":7000,"time":
 
 const SEASONS = [["spring", "Sp"], ["summer", "Su"], ["autumn", "Au"], ["winter", "Wi"]];
 const CHECKS = [10, 30, 60, 480];
-const MAX_TIMES = [10, 20, 30, 60, 120, 240, 480, 720, 1440];
+// slider stops for "grows in at most"; the last position means no limit
+const TIME_STEPS = [10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 360, 480, 720, 960, 1440, 2160, 2880, 4320];
+const TIME_TICKS = [10, 60, 240, 480, 1440, 2880];
 // gold/h columns fade from the first tint to the second, left to right
 const TINT_FROM = "#1baf7a", TINT_TO = "#9085e9";
+const FILTERS = [["search", "Search"], ["seasons", "Seasons"], ["time", "Grows in at most"]];
 
 const perCheck = (c, m) => 60 * c.profit / (Math.ceil(c.time / m) * m);
 const fmtTime = m => {
-  const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = Math.round(m % 60);
   return [d && d + "d", h && h + "h", mm && mm + "m"].filter(Boolean).join(" ") || "0m";
 };
 const fmtInt = n => Math.abs(n) >= 1000
   ? +(n / 1000).toFixed(2) + "k"
   : String(Math.round(n));
 const fmtCheck = m => m < 60 ? m + " min" : (m % 60 ? fmtTime(m) : m / 60 + " h");
+
+// "90", "90m", "1h30", "1h 30m", "1.5h", "2d" -> minutes; null if unreadable
+function parseTime(text) {
+  const t = text.trim().toLowerCase().replace(/\s+/g, "");
+  if (!t || t === "any") return Infinity;
+  if (/^\d+(\.\d+)?$/.test(t)) return +t;
+  const m = t.match(/^(?:(\d+(?:\.\d+)?)d)?(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m?)?$/);
+  if (!m || !(m[1] || m[2] || m[3])) return null;
+  return (+m[1] || 0) * 1440 + (+m[2] || 0) * 60 + (+m[3] || 0);
+}
 
 for (const c of CROPS) {
   c.profit = c.harvest - c.cost - 10;
@@ -213,17 +280,16 @@ for (const c of CROPS) {
   c.density = c.profit > 0 ? 100 * (Math.log(c.profit) - lnMin) / (lnMax - lnMin) : null;
 }
 
-// key, label, formatter, group, bar
 const COLUMNS = [
-  { key: "name", label: "Crop", cls: "name" },
+  { key: "name", label: "Crop", cls: "name", fixed: true },
   { key: "seasons", label: "Seasons", sort: c => SEASONS.filter(([s]) => c[s]).length },
-  { key: "cost", label: "Seed cost", fmt: fmtInt, sep: true },
+  { key: "cost", label: "Seed cost", fmt: fmtInt },
   { key: "harvest", label: "Sells for", fmt: fmtInt },
   { key: "time", label: "Grows in", fmt: fmtTime },
-  { key: "profit", label: "Profit", fmt: fmtInt, sep: true },
+  { key: "profit", label: "Profit", fmt: fmtInt },
   { key: "roi", label: "Profit / cost", fmt: v => v.toFixed(2) },
   { key: "density", label: "Density", fmt: v => v == null ? "—" : Math.round(v), bar: true },
-  { key: "nonstop", label: "Nonstop", fmt: fmtInt, bar: true, group: true, sep: true },
+  { key: "nonstop", label: "Nonstop", fmt: fmtInt, bar: true, group: true },
   ...CHECKS.map(m => ({ key: "c" + m, label: fmtCheck(m), fmt: fmtInt, bar: true, group: true })),
   { key: "custom", label: "Yours", fmt: fmtInt, bar: true, group: true },
 ];
@@ -231,31 +297,73 @@ COLUMNS.filter(c => c.group).forEach((c, i, all) => {
   c.tint = `color-mix(in oklch, ${TINT_TO} ${100 * i / (all.length - 1)}%, ${TINT_FROM})`;
 });
 
-let sortKey = "density", sortDir = -1, seasons = new Set(), matchAll = false, maxTime = null;
+// ---- settings remembered per browser
+const DEFAULTS = {
+  hiddenCols: ["c10", "c30", "custom"],
+  hiddenFilters: [],
+  customMinutes: 120,
+};
+const STORE_KEY = "farm-together-crops";
+let settings = { ...DEFAULTS };
+try { Object.assign(settings, JSON.parse(localStorage.getItem(STORE_KEY)) || {}); } catch (e) {}
+const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch (e) {} };
+const colVisible = col => col.fixed || !settings.hiddenCols.includes(col.key);
+const filterOn = key => !settings.hiddenFilters.includes(key);
+const toggle = (list, key, on) => on ? list.filter(k => k !== key) : [...list, key];
+
+let sortKey = "density", sortDir = -1, seasons = new Set(), matchAll = false, maxTime = Infinity;
 
 const $ = id => document.getElementById(id);
 
-function buildHead() {
-  const groupCols = COLUMNS.filter(c => c.group).length;
-  $("groupRow").innerHTML =
-    `<th class="name" colspan="1"></th><th colspan="${COLUMNS.length - groupCols - 1}"></th>` +
-    `<th class="group sep" colspan="${groupCols}">Gold per hour per tile, if you check every…</th>`;
-  $("headRow").innerHTML = COLUMNS.map(col =>
-    `<th class="sortable ${col.cls || ""} ${col.sep ? "sep" : ""} ${col.tint ? "tinted" : ""}" ` +
-    `${col.tint ? `style="--tint:${col.tint}"` : ""} data-key="${col.key}" tabindex="0" ` +
-    `aria-sort="none">${col.label}<span class="arrow"></span></th>`).join("");
-  for (const th of $("headRow").children) {
-    const go = () => {
-      const k = th.dataset.key;
-      sortDir = k === sortKey ? -sortDir : (k === "name" ? 1 : -1);
-      sortKey = k;
-      render();
-    };
-    th.addEventListener("click", go);
-    th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
-  }
+// ---- menus
+function buildMenus() {
+  $("filterPanel").innerHTML = "<h3>Show filters</h3>" + FILTERS.map(([k, label]) =>
+    `<div class="opt"><label><input type="checkbox" data-filter="${k}" ${filterOn(k) ? "checked" : ""}>${label}</label></div>`).join("");
+  $("filterPanel").querySelectorAll("input").forEach(box => box.addEventListener("change", () => {
+    settings.hiddenFilters = toggle(settings.hiddenFilters, box.dataset.filter, box.checked);
+    save(); applyFilterVisibility(); render();
+  }));
+
+  const item = col => {
+    const swatch = col.tint ? `<span class="swatch" style="background:${col.tint}"></span>` : "";
+    const extra = col.key === "custom"
+      ? `<input type="number" id="custom" min="1" step="1" value="${settings.customMinutes}" aria-label="Your check interval in minutes"><span class="sub">min</span>`
+      : "";
+    const label = col.key === "custom" ? "Every" : col.label;
+    return `<div class="opt"><label><input type="checkbox" data-col="${col.key}" ${colVisible(col) ? "checked" : ""}>${label}</label>` +
+      `${extra}${swatch}</div>`;
+  };
+  $("columnPanel").innerHTML =
+    "<h3>Crop info</h3>" + COLUMNS.filter(c => !c.fixed && !c.group).map(item).join("") +
+    "<h3>Gold/h if you check every…</h3>" + COLUMNS.filter(c => c.group).map(item).join("");
+  $("columnPanel").querySelectorAll("input[type=checkbox]").forEach(box => box.addEventListener("change", () => {
+    settings.hiddenCols = toggle(settings.hiddenCols, box.dataset.col, box.checked);
+    if (!box.checked && sortKey === box.dataset.col) { sortKey = "name"; sortDir = 1; }
+    save(); buildHead(); render();
+  }));
+  const custom = $("custom");
+  custom.addEventListener("input", () => {
+    const v = Math.round(+custom.value);
+    if (v >= 1) { settings.customMinutes = v; save(); render(); }
+  });
 }
 
+// close an open menu when clicking elsewhere
+document.addEventListener("click", e => {
+  for (const d of document.querySelectorAll("details.menu[open]")) if (!d.contains(e.target)) d.open = false;
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") document.querySelectorAll("details.menu[open]").forEach(d => d.open = false);
+});
+
+function applyFilterVisibility() {
+  document.querySelectorAll("#controls [data-filter]").forEach(row => row.hidden = !filterOn(row.dataset.filter));
+  $("controls").hidden = FILTERS.every(([k]) => !filterOn(k));
+  const off = settings.hiddenFilters.length;
+  $("filterBadge").textContent = off ? `${FILTERS.length - off}/${FILTERS.length}` : "";
+}
+
+// ---- filters
 function chips(el, opts, isOn, onClick) {
   el.innerHTML = opts.map(([v, label], i) =>
     `<button class="chip" data-i="${i}" aria-pressed="${isOn(v)}">${label}</button>`).join("");
@@ -269,8 +377,59 @@ function buildChips() {
   chips($("matchChips"), [[false, "any of them"], [true, "all of them"]],
     v => v === matchAll, v => matchAll = v);
   $("matchChips").hidden = seasons.size < 2;
-  chips($("timeChips"), [[null, "Any"], ...MAX_TIMES.map(m => [m, fmtTime(m)])],
-    m => m === maxTime, m => maxTime = m);
+}
+
+function buildTimeFilter() {
+  const slider = $("timeSlider"), input = $("timeInput"), last = TIME_STEPS.length;
+  slider.max = last;
+  slider.value = last;
+  const pct = i => 100 * i / last;
+  $("timeTicks").innerHTML = [...TIME_TICKS.map(m => [TIME_STEPS.indexOf(m), fmtTime(m)]), [last, "Any"]]
+    .map(([i, label]) => `<span style="left:${pct(i)}%">${label}</span>`).join("");
+  const show = () => { input.value = maxTime === Infinity ? "Any" : fmtTime(maxTime); input.classList.remove("bad"); };
+  slider.addEventListener("input", () => {
+    maxTime = +slider.value === last ? Infinity : TIME_STEPS[+slider.value];
+    show(); render();
+  });
+  const commit = () => {
+    const m = parseTime(input.value);
+    if (m === null || m <= 0) { input.classList.add("bad"); return; }
+    maxTime = m;
+    // put the thumb on the closest stop, but keep the exact typed value
+    slider.value = m === Infinity ? last
+      : TIME_STEPS.reduce((best, s, i) => Math.abs(s - m) < Math.abs(TIME_STEPS[best] - m) ? i : best, 0);
+    show(); render();
+  };
+  input.addEventListener("change", commit);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") commit(); });
+  show();
+}
+
+// ---- table
+function buildHead() {
+  const cols = COLUMNS.filter(colVisible);
+  const groupCols = cols.filter(c => c.group).length;
+  const rest = cols.length - groupCols - 1;
+  $("groupRow").innerHTML = `<th class="name"></th>` + (rest ? `<th colspan="${rest}"></th>` : "") +
+    (groupCols ? `<th class="group sep" colspan="${groupCols}">Gold per hour per tile, if you check every…</th>` : "");
+  $("headRow").innerHTML = cols.map((col, i) => {
+    const sep = col.group && !cols[i - 1].group ? " sep" : "";
+    const tint = col.tint ? ` tinted" style="--tint:${col.tint}` : "";
+    return `<th class="sortable ${col.cls || ""}${sep}${tint}" data-key="${col.key}" tabindex="0" aria-sort="none">` +
+      `${col.label}<span class="arrow"></span></th>`;
+  }).join("");
+  for (const th of $("headRow").children) {
+    const go = () => {
+      const k = th.dataset.key;
+      sortDir = k === sortKey ? -sortDir : (k === "name" ? 1 : -1);
+      sortKey = k;
+      render();
+    };
+    th.addEventListener("click", go);
+    th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  }
+  const hidden = COLUMNS.filter(c => !colVisible(c)).length;
+  $("columnBadge").textContent = hidden ? `${COLUMNS.length - hidden}/${COLUMNS.length}` : "";
 }
 
 function scaleFor(key) {
@@ -280,9 +439,9 @@ function scaleFor(key) {
 }
 
 function render() {
-  const m = Math.max(1, Math.round(+$("custom").value || 1));
-  for (const c of CROPS) c.custom = perCheck(c, m);
-  COLUMNS.at(-1).label = fmtCheck(m);
+  for (const c of CROPS) c.custom = perCheck(c, settings.customMinutes);
+  COLUMNS.at(-1).label = fmtCheck(settings.customMinutes);
+  const cols = COLUMNS.filter(colVisible);
   for (const th of $("headRow").children) {
     const col = COLUMNS.find(c => c.key === th.dataset.key);
     const active = th.dataset.key === sortKey;
@@ -291,12 +450,14 @@ function render() {
     th.setAttribute("aria-sort", active ? (sortDir < 0 ? "descending" : "ascending") : "none");
   }
 
-  const q = $("search").value.trim().toLowerCase();
-  const picked = [...seasons];
+  // a hidden filter doesn't filter
+  const q = filterOn("search") ? $("search").value.trim().toLowerCase() : "";
+  const picked = filterOn("seasons") ? [...seasons] : [];
+  const limit = filterOn("time") ? maxTime : Infinity;
   const rows = CROPS.filter(c =>
     (!q || c.name.toLowerCase().includes(q)) &&
     (!picked.length || (matchAll ? picked.every(s => c[s]) : picked.some(s => c[s]))) &&
-    (maxTime === null || c.time <= maxTime));
+    c.time <= limit);
   const col = COLUMNS.find(c => c.key === sortKey);
   const val = c => col.sort ? col.sort(c) : c[sortKey];
   rows.sort((a, b) => {
@@ -306,9 +467,9 @@ function render() {
     return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir;
   });
 
-  const scales = Object.fromEntries(COLUMNS.filter(c => c.bar).map(c => [c.key, scaleFor(c.key)]));
-  $("body").innerHTML = rows.map(c => "<tr>" + COLUMNS.map(col => {
-    const sep = col.sep ? " sep" : "";
+  const scales = Object.fromEntries(cols.filter(c => c.bar).map(c => [c.key, scaleFor(c.key)]));
+  $("body").innerHTML = rows.map(c => "<tr>" + cols.map((col, i) => {
+    const sep = col.group && !cols[i - 1].group ? " sep" : "";
     if (col.key === "name") return `<td class="name">${c.name}</td>`;
     if (col.key === "seasons") return `<td><span class="seasons">` + SEASONS.map(([s, ab]) =>
       `<span class="s${c[s] ? " on" : ""}" title="${s}${c[s] ? "" : " (no)"}">${ab}</span>`).join("") + `</span></td>`;
@@ -319,14 +480,17 @@ function render() {
     const tint = col.tint ? `--tint:${col.tint};` : "";
     return `<td class="bar${sep}${best}"><div class="cell"><div class="track">` +
       `<div class="fill" style="${tint}width:${sc.pct(v)}%"></div></div><span>${col.fmt(v)}</span></div></td>`;
-  }).join("") + "</tr>").join("");
+  }).join("") + "</tr>").join("") ||
+    `<tr><td class="empty" colspan="${cols.length}">No crops match these filters.</td></tr>`;
   $("count").textContent = `${rows.length} of ${CROPS.length} crops`;
 }
 
-buildHead();
+buildMenus();
+applyFilterVisibility();
 buildChips();
+buildTimeFilter();
+buildHead();
 $("search").addEventListener("input", render);
-$("custom").addEventListener("input", render);
 render();
 </script>
 </body>
