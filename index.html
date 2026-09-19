@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farm Together Crops</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌽</text></svg>">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #121211;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --border: #33322f;
+    --text: #ffffff;
+    --text-2: #c3c2b7;
+    --text-3: #8f8e86;
+    --accent: #5598e7;
+    --bar: #3987e5;
+    --chip-on: #3987e5;
+    --chip-on-text: #0b0b0b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 1320px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .lede { color: var(--text-2); margin: 0 0 24px; max-width: 70ch; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
+    margin-bottom: 12px;
+  }
+  .control { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+  input[type="search"], input[type="number"] {
+    font: inherit; color: var(--text); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
+  }
+  input[type="search"] { width: 200px; }
+  input[type="number"] { width: 76px; }
+  input:focus-visible, button:focus-visible, th:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  .chips { display: flex; gap: 4px; }
+  .chip {
+    font: inherit; font-size: 13px; cursor: pointer;
+    padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-2);
+  }
+  .chip[aria-pressed="true"] { background: var(--chip-on); border-color: var(--chip-on); color: var(--chip-on-text); }
+  .count { color: var(--text-3); margin-left: auto; font-size: 13px; }
+
+  .table-wrap {
+    overflow: auto; max-height: calc(100vh - 120px);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  }
+  table { border-collapse: separate; border-spacing: 0; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 7px 10px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+  thead th {
+    position: sticky; z-index: 2; background: var(--surface-2);
+    font-weight: 600; font-size: 12px; color: var(--text-2); text-align: right;
+  }
+  thead tr:first-child th { top: 0; height: 30px; }
+  thead tr:nth-child(2) th { top: 30px; }
+  thead th.group { text-align: center; border-bottom: 1px solid var(--border); font-weight: 500; }
+  thead th.sortable { cursor: pointer; user-select: none; vertical-align: bottom; }
+  thead th.sortable:hover { color: var(--text); }
+  th .arrow { display: inline-block; width: 10px; color: var(--accent); }
+  td { text-align: right; }
+  td.name, th.name { text-align: left; }
+  td.name {
+    position: sticky; left: 0; z-index: 1; background: var(--surface);
+    font-weight: 500; text-transform: capitalize;
+  }
+  thead th.name { left: 0; z-index: 3; }
+  tbody tr:hover td { background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.sep, th.sep { border-left: 1px solid var(--border); }
+
+  .seasons { display: inline-flex; gap: 3px; }
+  .s {
+    display: inline-block; width: 22px; text-align: center; font-size: 11px; font-weight: 600;
+    border-radius: 4px; padding: 1px 0; color: var(--text-3); border: 1px dashed var(--border);
+  }
+  .s.on { color: var(--chip-on-text); background: var(--chip-on); border: 1px solid var(--chip-on); }
+
+  td.bar .cell { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+  td.bar .track { width: 56px; height: 12px; }
+  td.bar .fill { height: 100%; background: var(--bar); border-radius: 0 4px 4px 0; }
+  td.bar span { min-width: 40px; }
+  td.best span { font-weight: 700; }
+  .muted { color: var(--text-3); }
+
+  .notes { margin-top: 28px; color: var(--text-2); max-width: 80ch; }
+  .notes h2 { font-size: 16px; color: var(--text); margin: 0 0 8px; }
+  .notes dt { font-weight: 600; color: var(--text); margin-top: 10px; }
+  .notes dd { margin: 2px 0 0; }
+  .notes code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  footer { margin-top: 24px; color: var(--text-3); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    main { padding-top: 20px; }
+    h1 { font-size: 22px; }
+    input[type="search"] { width: 100%; }
+    .control.search { flex: 1 1 100%; }
+    .count { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Farm Together crops</h1>
+  <p class="lede">Which crops are worth planting, and how much they really earn depending on how often you check your farm.
+    Click a column header to sort.</p>
+
+  <div class="controls">
+    <label class="control search">
+      <input type="search" id="search" placeholder="Search crops…" aria-label="Search crops">
+    </label>
+    <div class="control">
+      <span>Grows in</span>
+      <div class="chips" id="seasonChips" role="group" aria-label="Filter by season"></div>
+    </div>
+    <label class="control">
+      <span>Your check interval</span>
+      <input type="number" id="custom" min="1" step="1" value="120"> <span>min</span>
+    </label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr id="groupRow"></tr>
+        <tr id="headRow"></tr>
+      </thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+
+  <section class="notes">
+    <h2>How the numbers work</h2>
+    <dl>
+      <dt>Profit</dt>
+      <dd><code>sell price − seed cost − 10</code>, per tile, per harvest.</dd>
+      <dt>Profit / cost</dt>
+      <dd>Gold earned per gold spent on seeds. Useful early on, when money is tight.</dd>
+      <dt>Density</dt>
+      <dd>Profit per action (one plant + harvest cycle), on a log scale from 0 (least profitable crop) to 100 (most profitable).
+        It shows how much gold each click gets you, whatever the growth time.</dd>
+      <dt>Gold/h per tile</dt>
+      <dd>"Nonstop" assumes you replant the moment a crop is ready. The other columns assume you only check in every
+        10 min, 30 min, 1 h, 8 h, or your own interval, so a crop waits until your next visit.
+        For example, a 45 min crop checked every 30 min is harvested after 60 min.
+        This is where fast crops fall behind: they're only great if you're actively playing.</dd>
+      <dt>Bars</dt>
+      <dd>Bar length is on a log scale within each column, so small values stay visible. The best crop in each column is in bold.</dd>
+    </dl>
+  </section>
+  <footer>Data collected by hand in-game. Updated 2026-09-19.</footer>
+</main>
+
+<script>
+const CROPS = [{"name":"graffiti cauliflower","cost":4500,"harvest":7000,"time":2880,"spring":false,"summer":false,"autumn":true,"winter":false},{"name":"pineapple","cost":5500,"harvest":7000,"time":960,"spring":false,"summer":true,"autumn":false,"winter":false},{"name":"corn","cost":2000,"harvest":3020,"time":2880,"spring":true,"summer":false,"autumn":true,"winter":false},{"name":"white sorghum","cost":2350,"harvest":3340,"time":600,"spring":false,"summer":true,"autumn":false,"winter":false},{"name":"strawberry","cost":800,"harvest":1500,"time":2160,"spring":false,"summer":true,"autumn":true,"winter":false},{"name":"sunflower","cost":1500,"harvest":2200,"time":480,"spring":true,"summer":false,"autumn":true,"winter":false},{"name":"kiwifruit","cost":1000,"harvest":1600,"time":1440,"spring":true,"summer":false,"autumn":false,"winter":false},{"name":"watermelon","cost":250,"harvest":800,"time":2880,"spring":true,"summer":true,"autumn":true,"winter":true},{"name":"wheat","cost":400,"harvest":806,"time":1440,"spring":true,"summer":false,"autumn":false,"winter":true},{"name":"red pepper","cost":750,"harvest":1160,"time":600,"spring":true,"summer":true,"autumn":false,"winter":false},{"name":"shallot","cost":2200,"harvest":2620,"time":240,"spring":false,"summer":true,"autumn":true,"winter":false},{"name":"soybean","cost":2750,"harvest":3170,"time":210,"spring":false,"summer":false,"autumn":false,"winter":true},{"name":"lombardy cabbage","cost":500,"harvest":850,"time":1080,"spring":true,"summer":false,"autumn":true,"winter":false},{"name":"white mushroom","cost":2000,"harvest":2350,"time":180,"spring":false,"summer":false,"autumn":true,"winter":false},{"name":"pumpkin","cost":100,"harvest":404,"time":2880,"spring":false,"summer":true,"autumn":true,"winter":false},{"name":"beet","cost":800,"harvest":1100,"time":360,"spring":true,"summer":true,"autumn":true,"winter":true},{"name":"agave","cost":400,"harvest":657,"time":600,"spring":false,"summer":true,"autumn":false,"winter":true},{"name":"broccoli","cost":5000,"harvest":5260,"time":60,"spring":false,"summer":true,"autumn":true,"winter":false},{"name":"cheddar cauliflower","cost":2400,"harvest":2620,"time":45,"spring":true,"summer":false,"autumn":false,"winter":false},{"name":"beefsteak tomato","cost":1000,"harvest":1210,"time":360,"spring":true,"summer":false,"autumn":false,"winter":true},{"name":"cucumber","cost":1300,"harvest":1500,"time":120,"spring":false,"summer":false,"autumn":false,"winter":true},{"name":"red goji berry","cost":1400,"harvest":1600,"time":90,"spring":true,"summer":true,"autumn":false,"winter":false},{"name":"eggplant","cost":80,"harvest":242,"time":1440,"spring":true,"summer":true,"autumn":true,"winter":true},{"name":"leek","cost":1250,"harvest":1380,"time":45,"spring":false,"summer":false,"autumn":false,"winter":true},{"name":"red onion","cost":440,"harvest":568,"time":300,"spring":true,"summer":true,"autumn":true,"winter":false},{"name":"peas","cost":180,"harvest":281,"time":480,"spring":true,"summer":false,"autumn":true,"winter":false},{"name":"garlic","cost":300,"harvest":400,"time":210,"spring":false,"summer":true,"autumn":true,"winter":false},{"name":"purple carrot","cost":4200,"harvest":4300,"time":20,"spring":true,"summer":false,"autumn":true,"winter":true},{"name":"cotton","cost":100,"harvest":192,"time":720,"spring":true,"summer":true,"autumn":true,"winter":true},{"name":"yellow zucchini","cost":850,"harvest":930,"time":15,"spring":true,"summer":false,"autumn":false,"winter":true},{"name":"jicama","cost":2150,"harvest":2230,"time":10,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"aloe vera","cost":150,"harvest":222,"time":240,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"yellow onion","cost":80,"harvest":153,"time":210,"spring":true,"summer":true,"autumn":true,"winter":false},{"name":"blackberry","cost":220,"harvest":281,"time":240,"spring":false,"summer":true,"autumn":false,"winter":true},{"name":"potato","cost":60,"harvest":121,"time":180,"spring":true,"summer":true,"autumn":true,"winter":true},{"name":"tomato","cost":105,"harvest":169,"time":120,"spring":true,"summer":false,"autumn":false,"winter":false},{"name":"asparagus","cost":840,"harvest":900,"time":60,"spring":true,"summer":true,"autumn":false,"winter":true},{"name":"melon","cost":1000,"harvest":1060,"time":10,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"yellow pepper","cost":125,"harvest":181,"time":90,"spring":true,"summer":false,"autumn":true,"winter":false},{"name":"parasol mushroom","cost":170,"harvest":224,"time":60,"spring":true,"summer":false,"autumn":false,"winter":true},{"name":"blue grape","cost":50,"harvest":101,"time":360,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"cauliflower","cost":260,"harvest":312,"time":45,"spring":false,"summer":false,"autumn":true,"winter":false},{"name":"cabbage","cost":100,"harvest":140,"time":45,"spring":true,"summer":true,"autumn":false,"winter":false},{"name":"beans","cost":200,"harvest":240,"time":30,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"red pine mushroom","cost":450,"harvest":485,"time":20,"spring":false,"summer":false,"autumn":true,"winter":false},{"name":"zucchini","cost":120,"harvest":154,"time":15,"spring":true,"summer":false,"autumn":false,"winter":true},{"name":"carrot","cost":35,"harvest":63,"time":20,"spring":true,"summer":false,"autumn":true,"winter":true},{"name":"peanut","cost":40,"harvest":66,"time":30,"spring":false,"summer":true,"autumn":false,"winter":true},{"name":"turnip","cost":200,"harvest":226,"time":10,"spring":false,"summer":false,"autumn":true,"winter":true},{"name":"lettuce","cost":15,"harvest":31,"time":10,"spring":true,"summer":true,"autumn":true,"winter":true}];
+
+const SEASONS = [["spring", "Sp"], ["summer", "Su"], ["autumn", "Au"], ["winter", "Wi"]];
+const CHECKS = [10, 30, 60, 480];
+
+const perCheck = (c, m) => 60 * c.profit / (Math.ceil(c.time / m) * m);
+const fmtTime = m => {
+  const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
+  return [d && d + "d", h && h + "h", mm && mm + "m"].filter(Boolean).join(" ") || "0m";
+};
+const fmtInt = n => Math.round(n).toLocaleString("en-US");
+const fmtCheck = m => m < 60 ? m + " min" : (m % 60 ? fmtTime(m) : m / 60 + " h");
+
+for (const c of CROPS) {
+  c.profit = c.harvest - c.cost - 10;
+  c.roi = c.profit / c.cost;
+  c.nonstop = 60 * c.profit / c.time;
+  CHECKS.forEach(m => c["c" + m] = perCheck(c, m));
+}
+const pos = CROPS.map(c => c.profit).filter(p => p > 0);
+const lnMin = Math.log(Math.min(...pos)), lnMax = Math.log(Math.max(...pos));
+for (const c of CROPS) {
+  c.density = c.profit > 0 ? 100 * (Math.log(c.profit) - lnMin) / (lnMax - lnMin) : null;
+}
+
+// key, label, formatter, group, bar
+const COLUMNS = [
+  { key: "name", label: "Crop", cls: "name" },
+  { key: "seasons", label: "Seasons", sort: c => SEASONS.filter(([s]) => c[s]).length },
+  { key: "cost", label: "Seed cost", fmt: fmtInt, sep: true },
+  { key: "harvest", label: "Sells for", fmt: fmtInt },
+  { key: "time", label: "Grows in", fmt: fmtTime },
+  { key: "profit", label: "Profit", fmt: fmtInt, sep: true },
+  { key: "roi", label: "Profit / cost", fmt: v => v.toFixed(2) },
+  { key: "density", label: "Density", fmt: v => v == null ? "—" : Math.round(v), bar: true },
+  { key: "nonstop", label: "Nonstop", fmt: fmtInt, bar: true, group: true, sep: true },
+  ...CHECKS.map(m => ({ key: "c" + m, label: fmtCheck(m), fmt: fmtInt, bar: true, group: true })),
+  { key: "custom", label: "Yours", fmt: fmtInt, bar: true, group: true },
+];
+
+let sortKey = "density", sortDir = -1, seasonFilter = null;
+
+const $ = id => document.getElementById(id);
+
+function buildHead() {
+  const groupCols = COLUMNS.filter(c => c.group).length;
+  $("groupRow").innerHTML =
+    `<th class="name" colspan="1"></th><th colspan="${COLUMNS.length - groupCols - 1}"></th>` +
+    `<th class="group sep" colspan="${groupCols}">Gold per hour per tile, if you check every…</th>`;
+  $("headRow").innerHTML = COLUMNS.map(col =>
+    `<th class="sortable ${col.cls || ""} ${col.sep ? "sep" : ""}" data-key="${col.key}" tabindex="0" ` +
+    `aria-sort="none">${col.label}<span class="arrow"></span></th>`).join("");
+  for (const th of $("headRow").children) {
+    const go = () => {
+      const k = th.dataset.key;
+      sortDir = k === sortKey ? -sortDir : (k === "name" ? 1 : -1);
+      sortKey = k;
+      render();
+    };
+    th.addEventListener("click", go);
+    th.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  }
+}
+
+function buildChips() {
+  const opts = [[null, "All"], ...SEASONS.map(([s]) => [s, s[0].toUpperCase() + s.slice(1)])];
+  $("seasonChips").innerHTML = opts.map(([s, label]) =>
+    `<button class="chip" data-season="${s ?? ""}" aria-pressed="${s === seasonFilter}">${label}</button>`).join("");
+  for (const b of $("seasonChips").children) {
+    b.addEventListener("click", () => { seasonFilter = b.dataset.season || null; buildChips(); render(); });
+  }
+}
+
+function scaleFor(key) {
+  const vals = CROPS.map(c => c[key]).filter(v => v != null && v > 0);
+  const lo = Math.log(Math.min(...vals)), hi = Math.log(Math.max(...vals));
+  return { max: Math.max(...vals), pct: v => v == null || v <= 0 ? 0 : hi === lo ? 100 : 8 + 92 * (Math.log(v) - lo) / (hi - lo) };
+}
+
+function render() {
+  const m = Math.max(1, Math.round(+$("custom").value || 1));
+  for (const c of CROPS) c.custom = perCheck(c, m);
+  COLUMNS.at(-1).label = fmtCheck(m);
+  for (const th of $("headRow").children) {
+    const col = COLUMNS.find(c => c.key === th.dataset.key);
+    const active = th.dataset.key === sortKey;
+    th.firstChild.textContent = col.label;
+    th.querySelector(".arrow").textContent = active ? (sortDir < 0 ? "↓" : "↑") : "";
+    th.setAttribute("aria-sort", active ? (sortDir < 0 ? "descending" : "ascending") : "none");
+  }
+
+  const q = $("search").value.trim().toLowerCase();
+  const rows = CROPS.filter(c => (!q || c.name.toLowerCase().includes(q)) && (!seasonFilter || c[seasonFilter]));
+  const col = COLUMNS.find(c => c.key === sortKey);
+  const val = c => col.sort ? col.sort(c) : c[sortKey];
+  rows.sort((a, b) => {
+    const x = val(a), y = val(b);
+    if (x == null) return 1;
+    if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * sortDir;
+  });
+
+  const scales = Object.fromEntries(COLUMNS.filter(c => c.bar).map(c => [c.key, scaleFor(c.key)]));
+  $("body").innerHTML = rows.map(c => "<tr>" + COLUMNS.map(col => {
+    const sep = col.sep ? " sep" : "";
+    if (col.key === "name") return `<td class="name">${c.name}</td>`;
+    if (col.key === "seasons") return `<td><span class="seasons">` + SEASONS.map(([s, ab]) =>
+      `<span class="s${c[s] ? " on" : ""}" title="${s}${c[s] ? "" : " (no)"}">${ab}</span>`).join("") + `</span></td>`;
+    const v = c[col.key];
+    if (!col.bar) return `<td class="${sep}">${col.fmt(v)}</td>`;
+    const sc = scales[col.key];
+    const best = v != null && Math.abs(v - sc.max) < 1e-9 ? " best" : "";
+    return `<td class="bar${sep}${best}"><div class="cell"><div class="track">` +
+      `<div class="fill" style="width:${sc.pct(v)}%"></div></div><span>${col.fmt(v)}</span></div></td>`;
+  }).join("") + "</tr>").join("");
+  $("count").textContent = `${rows.length} of ${CROPS.length} crops`;
+}
+
+buildHead();
+buildChips();
+$("search").addEventListener("input", render);
+$("custom").addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
