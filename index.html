@@ -16,12 +16,13 @@
     --text-2: #c3c2b7;
     --text-3: #8f8e86;
     --accent: #5598e7;
-    --bar: #3987e5;
+    --bar: #c98500;
     --chip-on: #3987e5;
     --chip-on-text: #0b0b0b;
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0;
     background: var(--bg);
@@ -33,10 +34,13 @@
   .lede { color: var(--text-2); margin: 0 0 24px; max-width: 70ch; }
 
   .controls {
-    display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center;
-    margin-bottom: 12px;
+    display: grid; gap: 10px; margin-bottom: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
   }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .label { color: var(--text-2); min-width: 128px; }
   .control { display: flex; align-items: center; gap: 8px; color: var(--text-2); }
+  .control .label { min-width: 120px; }
   input[type="search"], input[type="number"] {
     font: inherit; color: var(--text); background: var(--surface);
     border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;
@@ -46,7 +50,9 @@
   input:focus-visible, button:focus-visible, th:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 1px;
   }
-  .chips { display: flex; gap: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chips.seg { margin-left: 8px; }
+  .chips.seg .chip { padding: 3px 9px; font-size: 12px; }
   .chip {
     font: inherit; font-size: 13px; cursor: pointer;
     padding: 5px 11px; border-radius: 999px;
@@ -91,7 +97,8 @@
 
   td.bar .cell { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
   td.bar .track { width: 56px; height: 12px; }
-  td.bar .fill { height: 100%; background: var(--bar); border-radius: 0 4px 4px 0; }
+  td.bar .fill { height: 100%; background: var(--tint, var(--bar)); border-radius: 0 4px 4px 0; }
+  thead th.tinted { box-shadow: inset 0 -3px 0 var(--tint); }
   td.bar span { min-width: 40px; }
   td.best span { font-weight: 700; }
   .muted { color: var(--text-3); }
@@ -108,7 +115,7 @@
     h1 { font-size: 22px; }
     input[type="search"] { width: 100%; }
     .control.search { flex: 1 1 100%; }
-    .count { margin-left: 0; }
+    .label, .control .label { min-width: 0; flex: 1 1 100%; }
   }
 </style>
 </head>
@@ -119,18 +126,27 @@
     Click a column header to sort.</p>
 
   <div class="controls">
-    <label class="control search">
-      <input type="search" id="search" placeholder="Search crops…" aria-label="Search crops">
-    </label>
-    <div class="control">
-      <span>Grows in</span>
-      <div class="chips" id="seasonChips" role="group" aria-label="Filter by season"></div>
+    <div class="row">
+      <label class="control search">
+        <input type="search" id="search" placeholder="Search crops…" aria-label="Search crops">
+      </label>
+      <span class="count" id="count"></span>
     </div>
-    <label class="control">
-      <span>Your check interval</span>
-      <input type="number" id="custom" min="1" step="1" value="120"> <span>min</span>
-    </label>
-    <span class="count" id="count"></span>
+    <div class="row">
+      <span class="label">Seasons</span>
+      <div class="chips" id="seasonChips" role="group" aria-label="Filter by season"></div>
+      <div class="chips seg" id="matchChips" role="group" aria-label="Season match mode"></div>
+    </div>
+    <div class="row">
+      <span class="label">Grows in at most</span>
+      <div class="chips" id="timeChips" role="group" aria-label="Maximum growth time"></div>
+    </div>
+    <div class="row">
+      <label class="control">
+        <span class="label">Your check interval</span>
+        <input type="number" id="custom" min="1" step="1" value="120"> <span>min</span>
+      </label>
+    </div>
   </div>
 
   <div class="table-wrap">
@@ -159,7 +175,8 @@
         For example, a 45 min crop checked every 30 min is harvested after 60 min.
         This is where fast crops fall behind: they're only great if you're actively playing.</dd>
       <dt>Bars</dt>
-      <dd>Bar length is on a log scale within each column, so small values stay visible. The best crop in each column is in bold.</dd>
+      <dd>Bar length is on a log scale within each column, so small values stay visible. The best crop in each column is in bold.
+        Numbers of 1,000 or more are written as k (2.35k = 2,350).</dd>
     </dl>
   </section>
   <footer>Data collected by hand in-game. Updated 2026-09-19.</footer>
@@ -170,13 +187,18 @@ const CROPS = [{"name":"graffiti cauliflower","cost":4500,"harvest":7000,"time":
 
 const SEASONS = [["spring", "Sp"], ["summer", "Su"], ["autumn", "Au"], ["winter", "Wi"]];
 const CHECKS = [10, 30, 60, 480];
+const MAX_TIMES = [10, 20, 30, 60, 120, 240, 480, 720, 1440];
+// gold/h columns fade from the first tint to the second, left to right
+const TINT_FROM = "#1baf7a", TINT_TO = "#9085e9";
 
 const perCheck = (c, m) => 60 * c.profit / (Math.ceil(c.time / m) * m);
 const fmtTime = m => {
   const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60), mm = m % 60;
   return [d && d + "d", h && h + "h", mm && mm + "m"].filter(Boolean).join(" ") || "0m";
 };
-const fmtInt = n => Math.round(n).toLocaleString("en-US");
+const fmtInt = n => Math.abs(n) >= 1000
+  ? +(n / 1000).toFixed(2) + "k"
+  : String(Math.round(n));
 const fmtCheck = m => m < 60 ? m + " min" : (m % 60 ? fmtTime(m) : m / 60 + " h");
 
 for (const c of CROPS) {
@@ -205,8 +227,11 @@ const COLUMNS = [
   ...CHECKS.map(m => ({ key: "c" + m, label: fmtCheck(m), fmt: fmtInt, bar: true, group: true })),
   { key: "custom", label: "Yours", fmt: fmtInt, bar: true, group: true },
 ];
+COLUMNS.filter(c => c.group).forEach((c, i, all) => {
+  c.tint = `color-mix(in oklch, ${TINT_TO} ${100 * i / (all.length - 1)}%, ${TINT_FROM})`;
+});
 
-let sortKey = "density", sortDir = -1, seasonFilter = null;
+let sortKey = "density", sortDir = -1, seasons = new Set(), matchAll = false, maxTime = null;
 
 const $ = id => document.getElementById(id);
 
@@ -216,7 +241,8 @@ function buildHead() {
     `<th class="name" colspan="1"></th><th colspan="${COLUMNS.length - groupCols - 1}"></th>` +
     `<th class="group sep" colspan="${groupCols}">Gold per hour per tile, if you check every…</th>`;
   $("headRow").innerHTML = COLUMNS.map(col =>
-    `<th class="sortable ${col.cls || ""} ${col.sep ? "sep" : ""}" data-key="${col.key}" tabindex="0" ` +
+    `<th class="sortable ${col.cls || ""} ${col.sep ? "sep" : ""} ${col.tint ? "tinted" : ""}" ` +
+    `${col.tint ? `style="--tint:${col.tint}"` : ""} data-key="${col.key}" tabindex="0" ` +
     `aria-sort="none">${col.label}<span class="arrow"></span></th>`).join("");
   for (const th of $("headRow").children) {
     const go = () => {
@@ -230,13 +256,21 @@ function buildHead() {
   }
 }
 
+function chips(el, opts, isOn, onClick) {
+  el.innerHTML = opts.map(([v, label], i) =>
+    `<button class="chip" data-i="${i}" aria-pressed="${isOn(v)}">${label}</button>`).join("");
+  for (const b of el.children) b.addEventListener("click", () => { onClick(opts[b.dataset.i][0]); buildChips(); render(); });
+}
+
 function buildChips() {
-  const opts = [[null, "All"], ...SEASONS.map(([s]) => [s, s[0].toUpperCase() + s.slice(1)])];
-  $("seasonChips").innerHTML = opts.map(([s, label]) =>
-    `<button class="chip" data-season="${s ?? ""}" aria-pressed="${s === seasonFilter}">${label}</button>`).join("");
-  for (const b of $("seasonChips").children) {
-    b.addEventListener("click", () => { seasonFilter = b.dataset.season || null; buildChips(); render(); });
-  }
+  chips($("seasonChips"), [[null, "Any"], ...SEASONS.map(([s]) => [s, s[0].toUpperCase() + s.slice(1)])],
+    s => s === null ? seasons.size === 0 : seasons.has(s),
+    s => s === null ? seasons.clear() : seasons.has(s) ? seasons.delete(s) : seasons.add(s));
+  chips($("matchChips"), [[false, "any of them"], [true, "all of them"]],
+    v => v === matchAll, v => matchAll = v);
+  $("matchChips").hidden = seasons.size < 2;
+  chips($("timeChips"), [[null, "Any"], ...MAX_TIMES.map(m => [m, fmtTime(m)])],
+    m => m === maxTime, m => maxTime = m);
 }
 
 function scaleFor(key) {
@@ -258,7 +292,11 @@ function render() {
   }
 
   const q = $("search").value.trim().toLowerCase();
-  const rows = CROPS.filter(c => (!q || c.name.toLowerCase().includes(q)) && (!seasonFilter || c[seasonFilter]));
+  const picked = [...seasons];
+  const rows = CROPS.filter(c =>
+    (!q || c.name.toLowerCase().includes(q)) &&
+    (!picked.length || (matchAll ? picked.every(s => c[s]) : picked.some(s => c[s]))) &&
+    (maxTime === null || c.time <= maxTime));
   const col = COLUMNS.find(c => c.key === sortKey);
   const val = c => col.sort ? col.sort(c) : c[sortKey];
   rows.sort((a, b) => {
@@ -278,8 +316,9 @@ function render() {
     if (!col.bar) return `<td class="${sep}">${col.fmt(v)}</td>`;
     const sc = scales[col.key];
     const best = v != null && Math.abs(v - sc.max) < 1e-9 ? " best" : "";
+    const tint = col.tint ? `--tint:${col.tint};` : "";
     return `<td class="bar${sep}${best}"><div class="cell"><div class="track">` +
-      `<div class="fill" style="width:${sc.pct(v)}%"></div></div><span>${col.fmt(v)}</span></div></td>`;
+      `<div class="fill" style="${tint}width:${sc.pct(v)}%"></div></div><span>${col.fmt(v)}</span></div></td>`;
   }).join("") + "</tr>").join("");
   $("count").textContent = `${rows.length} of ${CROPS.length} crops`;
 }
