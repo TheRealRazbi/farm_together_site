@@ -71,6 +71,7 @@
   }
   .menu-panel .opt:hover { background: var(--surface); }
   .menu-panel .opt label { display: flex; align-items: center; gap: 10px; cursor: pointer; white-space: nowrap; flex: 1; }
+  .menu-panel .opt label.sub { flex: none; gap: 6px; }
   .menu-panel .swatch { width: 10px; height: 10px; border-radius: 3px; margin-left: auto; flex: none; }
   .menu-panel .sub { color: var(--text-3); font-size: 12px; }
 
@@ -103,6 +104,21 @@
   }
   #timeInput { width: 92px; padding: 4px 8px; text-align: center; }
   #timeInput.bad { border-color: #e66767; }
+
+  /* season clock */
+  select, input[type="time"] {
+    font: inherit; color: var(--text); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 4px 8px;
+  }
+  .btn {
+    font: inherit; font-size: 13px; cursor: pointer; padding: 4px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  }
+  .btn:hover { border-color: var(--accent); }
+  .row .sub { color: var(--text-3); }
+  .clock-status { color: var(--text-2); font-size: 13px; }
+  .clock-status b { color: var(--text); }
+  .clock-status.bad { color: #e66767; }
 
   /* table */
   .table-wrap {
@@ -139,6 +155,11 @@
     border-radius: 4px; padding: 1px 0; color: var(--text-3); border: 1px dashed var(--border);
   }
   .s.on { color: var(--chip-on-text); background: var(--chip-on); border: 1px solid var(--chip-on); }
+  .s.now { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text-2); }
+
+  /* season clock highlight: crops you can't plant right now are dimmed */
+  tbody tr.off td { color: var(--text-3); }
+  tbody tr.off .fill, tbody tr.off .s.on { opacity: 0.35; }
 
   td.bar .cell { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
   td.bar .track { width: 56px; height: 12px; }
@@ -191,6 +212,15 @@
       <div class="chips" id="seasonChips" role="group" aria-label="Filter by season"></div>
       <div class="chips seg" id="matchChips" role="group" aria-label="Season match mode"></div>
     </div>
+    <div class="row" data-filter="clock">
+      <span class="label">Season clock</span>
+      <select id="clockSeason" aria-label="Season"></select>
+      <span class="sub">began at</span>
+      <input type="time" id="clockStart" step="1" aria-label="Time the season began">
+      <button class="btn" id="clockNow" type="button" title="The season you picked started just now">Just started</button>
+      <span class="clock-status" id="clockStatus"></span>
+      <div class="chips seg" id="clockChips" role="group" aria-label="What to do with the current season"></div>
+    </div>
     <div class="row" data-filter="time">
       <span class="label">Grows in at most</span>
       <div class="slider">
@@ -217,7 +247,12 @@
       <dt>Profit</dt>
       <dd><code>sell price − seed cost − 10</code>, per tile, per harvest.</dd>
       <dt>Profit / cost</dt>
-      <dd>Gold earned per gold spent on seeds. Useful early on, when money is tight.</dd>
+      <dd>Gold earned per gold spent on seeds, as a percentage (40% = 0.40 gold back per gold spent; switch to plain
+        numbers under Columns). Useful early on, when money is tight.</dd>
+      <dt>Season clock</dt>
+      <dd>Seasons last exactly 17 minutes and keep turning while the game is closed, so once you enter when one season
+        began, the page works out the current one from then on. "Highlight" dims crops you can't plant right now,
+        "Filter" hides them.</dd>
       <dt>Density</dt>
       <dd>Profit per action (one plant + harvest cycle), on a log scale from 0 (least profitable crop) to 100 (most profitable).
         It shows how much gold each click gets you, whatever the growth time.</dd>
@@ -230,7 +265,7 @@
       <dd>Bar length is on a log scale within each column, so small values stay visible. The best crop in each column is in bold.
         Numbers of 1,000 or more are written as k (2.35k = 2,350).</dd>
       <dt>Your settings</dt>
-      <dd>Which filters and columns you show, and your check interval, are remembered in this browser.</dd>
+      <dd>Which filters and columns you show, your check interval and your season clock are remembered in this browser.</dd>
     </dl>
   </section>
   <footer>Data collected by hand in-game. Updated 2026-09-19.</footer>
@@ -246,7 +281,9 @@ const TIME_STEPS = [10, 20, 30, 40, 50, 60, 90, 120, 180, 240, 360, 480, 720, 96
 const TIME_TICKS = [10, 60, 240, 480, 1440, 2880];
 // gold/h columns fade from the first tint to the second, left to right
 const TINT_FROM = "#1baf7a", TINT_TO = "#9085e9";
-const FILTERS = [["search", "Search"], ["seasons", "Seasons"], ["time", "Grows in at most"]];
+const FILTERS = [["search", "Search"], ["seasons", "Seasons"], ["clock", "Season clock"], ["time", "Grows in at most"]];
+// in-game seasons turn every 17 real minutes, in this order, even while the game is closed
+const SEASON_MS = 17 * 60 * 1000;
 
 const perCheck = (c, m) => 60 * c.profit / (Math.ceil(c.time / m) * m);
 const fmtTime = m => {
@@ -256,6 +293,7 @@ const fmtTime = m => {
 const fmtInt = n => Math.abs(n) >= 1000
   ? +(n / 1000).toFixed(2) + "k"
   : String(Math.round(n));
+const cap = s => s[0].toUpperCase() + s.slice(1);
 const fmtCheck = m => m < 60 ? m + " min" : (m % 60 ? fmtTime(m) : m / 60 + " h");
 
 // "90", "90m", "1h30", "1h 30m", "1.5h", "2d" -> minutes; null if unreadable
@@ -287,7 +325,7 @@ const COLUMNS = [
   { key: "harvest", label: "Sells for", fmt: fmtInt },
   { key: "time", label: "Grows in", fmt: fmtTime },
   { key: "profit", label: "Profit", fmt: fmtInt },
-  { key: "roi", label: "Profit / cost", fmt: v => v.toFixed(2) },
+  { key: "roi", label: "Profit / cost", fmt: v => settings.roiPercent ? Math.round(100 * v) + "%" : v.toFixed(2) },
   { key: "density", label: "Density", fmt: v => v == null ? "—" : Math.round(v), bar: true },
   { key: "nonstop", label: "Nonstop", fmt: fmtInt, bar: true, group: true },
   ...CHECKS.map(m => ({ key: "c" + m, label: fmtCheck(m), fmt: fmtInt, bar: true, group: true })),
@@ -302,6 +340,11 @@ const DEFAULTS = {
   hiddenCols: ["c10", "c30", "custom"],
   hiddenFilters: [],
   customMinutes: 120,
+  roiPercent: true,
+  // season clock: index into SEASONS and the epoch ms at which that season began
+  clock: null,
+  clockHighlight: true,
+  clockFilter: false,
 };
 const STORE_KEY = "farm-together-crops";
 let settings = { ...DEFAULTS };
@@ -328,6 +371,8 @@ function buildMenus() {
     const swatch = col.tint ? `<span class="swatch" style="background:${col.tint}"></span>` : "";
     const extra = col.key === "custom"
       ? `<input type="number" id="custom" min="1" step="1" value="${settings.customMinutes}" aria-label="Your check interval in minutes"><span class="sub">min</span>`
+      : col.key === "roi"
+      ? `<label class="sub"><input type="checkbox" id="roiPercent" ${settings.roiPercent ? "checked" : ""}>as %</label>`
       : "";
     const label = col.key === "custom" ? "Every" : col.label;
     return `<div class="opt"><label><input type="checkbox" data-col="${col.key}" ${colVisible(col) ? "checked" : ""}>${label}</label>` +
@@ -336,7 +381,7 @@ function buildMenus() {
   $("columnPanel").innerHTML =
     "<h3>Crop info</h3>" + COLUMNS.filter(c => !c.fixed && !c.group).map(item).join("") +
     "<h3>Gold/h if you check every…</h3>" + COLUMNS.filter(c => c.group).map(item).join("");
-  $("columnPanel").querySelectorAll("input[type=checkbox]").forEach(box => box.addEventListener("change", () => {
+  $("columnPanel").querySelectorAll("input[data-col]").forEach(box => box.addEventListener("change", () => {
     settings.hiddenCols = toggle(settings.hiddenCols, box.dataset.col, box.checked);
     if (!box.checked && sortKey === box.dataset.col) { sortKey = "name"; sortDir = 1; }
     save(); buildHead(); render();
@@ -346,6 +391,7 @@ function buildMenus() {
     const v = Math.round(+custom.value);
     if (v >= 1) { settings.customMinutes = v; save(); render(); }
   });
+  $("roiPercent").addEventListener("change", e => { settings.roiPercent = e.target.checked; save(); render(); });
 }
 
 // close an open menu when clicking elsewhere
@@ -371,12 +417,72 @@ function chips(el, opts, isOn, onClick) {
 }
 
 function buildChips() {
-  chips($("seasonChips"), [[null, "Any"], ...SEASONS.map(([s]) => [s, s[0].toUpperCase() + s.slice(1)])],
+  chips($("seasonChips"), [[null, "Any"], ...SEASONS.map(([s]) => [s, cap(s)])],
     s => s === null ? seasons.size === 0 : seasons.has(s),
     s => s === null ? seasons.clear() : seasons.has(s) ? seasons.delete(s) : seasons.add(s));
   chips($("matchChips"), [[false, "any of them"], [true, "all of them"]],
     v => v === matchAll, v => matchAll = v);
   $("matchChips").hidden = seasons.size < 2;
+  chips($("clockChips"), [["clockHighlight", "Highlight"], ["clockFilter", "Filter"]],
+    k => settings[k], k => { settings[k] = !settings[k]; save(); });
+}
+
+// ---- season clock
+const mod = (a, n) => (a % n + n) % n;
+const pad = n => String(n).padStart(2, "0");
+const hms = t => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+
+// the season running at time t, when it began and how long it has left
+function clockAt(t = Date.now()) {
+  if (!settings.clock) return null;
+  const n = Math.floor((t - settings.clock.start) / SEASON_MS);
+  const start = settings.clock.start + n * SEASON_MS;
+  return { idx: mod(settings.clock.season + n, SEASONS.length), start, left: start + SEASON_MS - t };
+}
+const currentSeason = () => {
+  const now = filterOn("clock") && clockAt();
+  return now ? SEASONS[now.idx][0] : null;
+};
+
+// "14:05" or "14:05:30" -> the latest such moment that isn't in the future
+function parseClockTime(text) {
+  const m = text.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return null;
+  const d = new Date();
+  d.setHours(+m[1], +m[2], +m[3] || 0, 0);
+  if (d > Date.now()) d.setDate(d.getDate() - 1);
+  return d.getTime();
+}
+
+let shownStart;  // start of the season the table was last drawn for
+function syncClockInputs() {
+  const now = clockAt();
+  if (!now) return;
+  if (document.activeElement !== $("clockSeason")) $("clockSeason").value = now.idx;
+  if (document.activeElement !== $("clockStart")) $("clockStart").value = hms(now.start);
+}
+
+function tick() {
+  const now = clockAt();
+  $("clockStatus").innerHTML = now
+    ? `<b>${cap(SEASONS[now.idx][0])}</b> now · ${Math.floor(now.left / 60000)}:${pad(Math.floor(now.left / 1000) % 60)} left,` +
+      ` then ${cap(SEASONS[(now.idx + 1) % SEASONS.length][0])}`
+    : "Pick a season and when it began, or press Just started the moment one begins.";
+  const start = now && now.start;
+  if (start !== shownStart) { shownStart = start; syncClockInputs(); render(); }
+}
+
+function buildClock() {
+  const season = $("clockSeason"), time = $("clockStart");
+  season.innerHTML = SEASONS.map(([s], i) => `<option value="${i}">${cap(s)}</option>`).join("");
+  const set = start => { settings.clock = { season: +season.value, start }; save(); shownStart = undefined; tick(); };
+  // picking a season re-labels the season that began at the entered time
+  season.addEventListener("change", () => set(parseClockTime(time.value) ?? Date.now()));
+  time.addEventListener("change", () => { const t = parseClockTime(time.value); if (t != null) set(t); });
+  for (const el of [season, time]) el.addEventListener("blur", syncClockInputs);
+  $("clockNow").addEventListener("click", () => set(Date.now()));
+  setInterval(tick, 1000);
+  document.addEventListener("visibilitychange", tick);
 }
 
 function buildTimeFilter() {
@@ -454,9 +560,11 @@ function render() {
   const q = filterOn("search") ? $("search").value.trim().toLowerCase() : "";
   const picked = filterOn("seasons") ? [...seasons] : [];
   const limit = filterOn("time") ? maxTime : Infinity;
+  const cur = currentSeason();
   const rows = CROPS.filter(c =>
     (!q || c.name.toLowerCase().includes(q)) &&
     (!picked.length || (matchAll ? picked.every(s => c[s]) : picked.some(s => c[s]))) &&
+    (!cur || !settings.clockFilter || c[cur]) &&
     c.time <= limit);
   const col = COLUMNS.find(c => c.key === sortKey);
   const val = c => col.sort ? col.sort(c) : c[sortKey];
@@ -468,11 +576,13 @@ function render() {
   });
 
   const scales = Object.fromEntries(cols.filter(c => c.bar).map(c => [c.key, scaleFor(c.key)]));
-  $("body").innerHTML = rows.map(c => "<tr>" + cols.map((col, i) => {
+  const dim = c => cur && settings.clockHighlight && !c[cur];
+  $("body").innerHTML = rows.map(c => (dim(c) ? `<tr class="off">` : "<tr>") + cols.map((col, i) => {
     const sep = col.group && !cols[i - 1].group ? " sep" : "";
     if (col.key === "name") return `<td class="name">${c.name}</td>`;
     if (col.key === "seasons") return `<td><span class="seasons">` + SEASONS.map(([s, ab]) =>
-      `<span class="s${c[s] ? " on" : ""}" title="${s}${c[s] ? "" : " (no)"}">${ab}</span>`).join("") + `</span></td>`;
+      `<span class="s${c[s] ? " on" : ""}${s === cur ? " now" : ""}" title="${s}${c[s] ? "" : " (no)"}${s === cur ? ", now" : ""}">${ab}</span>`
+    ).join("") + `</span></td>`;
     const v = c[col.key];
     if (!col.bar) return `<td class="${sep}">${col.fmt(v)}</td>`;
     const sc = scales[col.key];
@@ -489,9 +599,10 @@ buildMenus();
 applyFilterVisibility();
 buildChips();
 buildTimeFilter();
+buildClock();
 buildHead();
 $("search").addEventListener("input", render);
-render();
+tick();
 </script>
 </body>
 </html>
